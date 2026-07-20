@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>24-0 — Build the Perfect F1 Season</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --asphalt:#0b0e11;
+    --panel:#12161b;
+    --panel-2:#171c22;
+    --line:#242b33;
+    --white:#f2f4f6;
+    --silver:#8a94a1;
+    --red:#e10600;
+    --red-dim:#5c1210;
+    --amber:#ffb400;
+    --green:#00d97e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at top, #171c22 0%, var(--asphalt) 55%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 40px);
+    color:var(--white);
+    font-family:'Oswald',sans-serif;
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
+
+  /* header */
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    border-bottom:3px solid var(--red);
+    padding-bottom:14px; margin-bottom:22px; flex-wrap:wrap; gap:10px;
+  }
+  .title-block h1{
+    font-size:38px; font-weight:700; letter-spacing:1px; margin:0;
+    text-transform:uppercase;
+  }
+  .title-block h1 span{color:var(--red);}
+  .title-block p{margin:2px 0 0; color:var(--silver); font-size:13px; letter-spacing:2px; text-transform:uppercase; font-family:'JetBrains Mono',monospace;}
+  .lights{display:flex; gap:6px;}
+  .light{width:14px;height:14px;border-radius:50%;background:#2a1010;border:1px solid var(--line);}
+  .light.on{background:var(--red); box-shadow:0 0 10px var(--red);}
+
+  /* board of slots */
+  .board{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:10px; margin-bottom:22px;
+  }
+  .slot{
+    background:var(--panel); border:1px solid var(--line); border-radius:4px;
+    padding:12px 10px; position:relative; min-height:92px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    cursor:pointer; transition:border-color .15s, transform .1s;
+  }
+  .slot:hover:not(.filled):not(.disabled){border-color:var(--red);}
+  .slot.active{border-color:var(--amber); box-shadow:0 0 0 1px var(--amber) inset;}
+  .slot.filled{cursor:default;}
+  .slot.disabled{opacity:.4; cursor:not-allowed;}
+  .slot-label{
+    font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1.5px;
+    color:var(--silver); text-transform:uppercase;
+  }
+  .slot-value{font-size:16px; font-weight:600; line-height:1.25;}
+  .slot-sub{font-size:11px; color:var(--amber); font-family:'JetBrains Mono',monospace;}
+  .slot-empty{color:var(--line); font-size:24px; align-self:center;}
+
+  /* draft panel */
+  .draft{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
+    padding:20px; margin-bottom:20px;
+  }
+  .draft h2{margin:0 0 4px; font-size:20px; text-transform:uppercase; letter-spacing:1px;}
+  .draft .meta{color:var(--silver); font-family:'JetBrains Mono',monospace; font-size:12px; margin-bottom:16px;}
+  .spin-btn, .action-btn{
+    background:var(--red); color:white; border:none; padding:12px 22px;
+    font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:1px; text-transform:uppercase;
+    font-size:14px; border-radius:3px; cursor:pointer; transition:filter .15s;
+  }
+  .spin-btn:hover, .action-btn:hover{filter:brightness(1.15);}
+  .spin-btn:disabled{background:#3a1512; color:#8a6b68; cursor:not-allowed;}
+  .reveal{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:16px;
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:14px;
+    cursor:pointer; transition:border-color .15s, transform .1s;
+  }
+  .card:hover{border-color:var(--amber); transform:translateY(-2px);}
+  .card.locked{opacity:.45; filter:blur(1.5px); cursor:not-allowed; transform:none; pointer-events:none;}
+  .card .role{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--silver); letter-spacing:1.5px; text-transform:uppercase;}
+  .card .name{font-size:18px; font-weight:600; margin:4px 0;}
+  .card .rating{font-family:'JetBrains Mono',monospace; color:var(--green); font-size:13px;}
+  .team-tag{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px;
+    background:var(--red-dim); color:#ff8f8a; padding:3px 8px; border-radius:3px; margin-bottom:12px;
+    letter-spacing:1px;
+  }
+  .reroll-row{margin-top:14px; display:flex; align-items:center; gap:12px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--silver);}
+  .reroll-row button{background:transparent; border:1px solid var(--line); color:var(--silver); padding:8px 14px; border-radius:3px; cursor:pointer; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:1px; font-size:11px;}
+  .reroll-row button:hover:not(:disabled){border-color:var(--amber); color:var(--amber);}
+  .reroll-row button:disabled{opacity:.3; cursor:not-allowed;}
+
+  /* sim */
+  .sim-summary{
+    text-align:center; padding:26px 16px;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:6px; margin-bottom:20px;
+  }
+  .record{font-family:'JetBrains Mono',monospace; font-size:56px; font-weight:700; letter-spacing:2px;}
+  .record.perfect{color:var(--green); text-shadow:0 0 20px rgba(0,217,126,.4);}
+  .record.imperfect{color:var(--white);}
+  .tier{color:var(--amber); text-transform:uppercase; letter-spacing:2px; font-size:13px; margin-top:6px;}
+  .rating-line{color:var(--silver); font-family:'JetBrains Mono',monospace; font-size:12px; margin-top:10px;}
+
+  .race-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; margin-top:8px;
+  }
+  .race{
+    background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:8px 10px;
+    font-family:'JetBrains Mono',monospace; font-size:11px;
+  }
+  .race.win{border-left:3px solid var(--green);}
+  .race.loss{border-left:3px solid var(--red);}
+  .race .rname{color:var(--silver); text-transform:uppercase; font-size:10px; letter-spacing:.5px;}
+  .race .result{font-weight:700; margin-top:2px;}
+  .race.win .result{color:var(--green);}
+  .race.loss .result{color:var(--red);}
+
+  footer{margin-top:30px; text-align:center; color:var(--line); font-family:'JetBrains Mono',monospace; font-size:11px;}
+  footer a{color:var(--silver);}
+
+  .reset-row{text-align:center; margin-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <h1>24<span>-0</span></h1>
+      <p>Build the perfect F1 season</p>
+    </div>
+    <div class="lights" id="lights"></div>
+  </header>
+
+  <div class="board" id="board"></div>
+
+  <div class="draft" id="draftPanel"></div>
+
+  <div id="simArea"></div>
+
+  <footer>
+    Ratings are editorial approximations for game balance, not official performance data. Race-engineer pairings reflect real public reporting where known.
+  </footer>
+</div>
+
+<script>
+/* ---------------- DATA ---------------- */
+// Each entry = one "spin": a real team-season with its people & car.
+// ratings are 1-99, hand-set for game balance based on real-world competitiveness.
+const POOL = [
+  { team:"McLaren", year:2025,
+    drivers:[{name:"Lando Norris", rating:95},{name:"Oscar Piastri", rating:94}],
+    engineers:[{name:"Will Joseph", rating:90, forDriver:"Lando Norris"},{name:"Tom Stallard", rating:90, forDriver:"Oscar Piastri"}],
+    principal:{name:"Andrea Stella", rating:88},
+    car:{name:"MCL39", rating:96} },
+
+  { team:"Red Bull", year:2023,
+    drivers:[{name:"Max Verstappen", rating:99},{name:"Sergio Pérez", rating:85}],
+    engineers:[{name:"Gianpiero Lambiase", rating:93, forDriver:"Max Verstappen"},{name:"Hugh Bird", rating:82, forDriver:"Sergio Pérez"}],
+    principal:{name:"Christian Horner", rating:90},
+    car:{name:"RB19", rating:99} },
+
+  { team:"Mercedes", year:2020,
+    drivers:[{name:"Lewis Hamilton", rating:98},{name:"Valtteri Bottas", rating:88}],
+    engineers:[{name:"Peter Bonnington", rating:92, forDriver:"Lewis Hamilton"},{name:"Riccardo Musconi", rating:85, forDriver:"Valtteri Bottas"}],
+    principal:{name:"Toto Wolff", rating:93},
+    car:{name:"W11", rating:98} },
+
+  { team:"Ferrari", year:2025,
+    drivers:[{name:"Charles Leclerc", rating:93},{name:"Lewis Hamilton", rating:90}],
+    engineers:[{name:"Bryan Bozzi", rating:88, forDriver:"Charles Leclerc"},{name:"Riccardo Adami", rating:91, forDriver:"Lewis Hamilton"}],
+    principal:{name:"Frédéric Vasseur", rating:85},
+    car:{name:"SF-25", rating:87} },
+
+  { team:"Ferrari", year:2022,
+    drivers:[{name:"Charles Leclerc", rating:92},{name:"Carlos Sainz", rating:88}],
+    engineers:[{name:"Xavi Marcos", rating:78, forDriver:"Charles Leclerc"},{name:"Riccardo Adami", rating:89, forDriver:"Carlos Sainz"}],
+    principal:{name:"Mattia Binotto", rating:74},
+    car:{name:"F1-75", rating:93} },
+
+  { team:"Aston Martin", year:2023,
+    drivers:[{name:"Fernando Alonso", rating:93},{name:"Lance Stroll", rating:78}],
+    engineers:[{name:"Chris Cronin", rating:84, forDriver:"Fernando Alonso"},{name:"Mark Slade", rating:76, forDriver:"Lance Stroll"}],
+    principal:{name:"Mike Krack", rating:82},
+    car:{name:"AMR23", rating:88} },
+
+  { team:"Alpine", year:2024,
+    drivers:[{name:"Pierre Gasly", rating:84},{name:"Esteban Ocon", rating:83}],
+    engineers:[{name:"John Howard", rating:80, forDriver:"Pierre Gasly"},{name:"Josh Peckett", rating:78, forDriver:"Esteban Ocon"}],
+    principal:{name:"Bruno Famin", rating:72},
+    car:{name:"A524", rating:68} },
+
+  { team:"Haas", year:2024,
+    drivers:[{name:"Nico Hülkenberg", rating:85},{name:"Kevin Magnussen", rating:80}],
+    engineers:[{name:"Gary Gannon", rating:79, forDriver:"Kevin Magnussen"},{name:"Ronan O'Driscoll", rating:78, forDriver:"Nico Hülkenberg"}],
+    principal:{name:"Ayao Komatsu", rating:80},
+    car:{name:"VF-24", rating:72} },
+
+  { team:"Racing Bulls", year:2025,
+    drivers:[{name:"Yuki Tsunoda", rating:82},{name:"Isack Hadjar", rating:80}],
+    engineers:[{name:"Ernesto Desiderio", rating:80, forDriver:"Yuki Tsunoda"},{name:"Renon Almedia", rating:78, forDriver:"Isack Hadjar"}],
+    principal:{name:"Laurent Mekies", rating:83},
+    car:{name:"VCARB 02", rating:78} },
+
+  { team:"Kick Sauber", year:2025,
+    drivers:[{name:"Nico Hülkenberg", rating:85},{name:"Gabriel Bortoleto", rating:76}],
+    engineers:[{name:"Marco Matassa", rating:78, forDriver:"Nico Hülkenberg"},{name:"James Urwin", rating:74, forDriver:"Gabriel Bortoleto"}],
+    principal:{name:"Jonathan Wheatley", rating:82},
+    car:{name:"C45", rating:65} },
+
+  { team:"Williams", year:2024,
+    drivers:[{name:"Alex Albon", rating:86},{name:"Logan Sargeant", rating:74}],
+    engineers:[{name:"James Urwin", rating:80, forDriver:"Alex Albon"},{name:"Gaetan Jego", rating:73, forDriver:"Logan Sargeant"}],
+    principal:{name:"James Vowles", rating:87},
+    car:{name:"FW46", rating:76} },
+
+  { team:"Mercedes", year:2025,
+    drivers:[{name:"George Russell", rating:90},{name:"Kimi Antonelli", rating:82}],
+    engineers:[{name:"Marcus Dudley", rating:87, forDriver:"George Russell"},{name:"Peter Bonnington", rating:92, forDriver:"Kimi Antonelli"}],
+    principal:{name:"Toto Wolff", rating:93},
+    car:{name:"W16", rating:89} },
+];
+
+const CALENDAR = ["Australia","China","Japan","Bahrain","Saudi Arabia","Miami","Emilia Romagna",
+  "Monaco","Spain","Canada","Austria","Britain","Belgium","Hungary","Netherlands","Italy",
+  "Azerbaijan","Singapore","United States","Mexico","Brazil","Las Vegas","Qatar","Abu Dhabi"];
+
+/* ---------------- SLOT DEFINITIONS ---------------- */
+const SLOT_DEFS = [
+  {key:"driver1", label:"Driver 1", category:"driver"},
+  {key:"driver2", label:"Driver 2", category:"driver"},
+  {key:"engineer1", label:"Race Engineer 1", category:"engineer", pairsWith:"driver1"},
+  {key:"engineer2", label:"Race Engineer 2", category:"engineer", pairsWith:"driver2"},
+  {key:"principal", label:"Team Principal", category:"principal"},
+  {key:"car", label:"Car", category:"car"},
+];
+
+let squad = {}; // key -> {name, rating, team, year}
+let currentSpin = null;
+let rerollsLeft = 1;
+
+/* ---------------- RENDER: BOARD ---------------- */
+function renderLights(){
+  const el = document.getElementById('lights');
+  const filled = Object.keys(squad).length;
+  el.innerHTML = SLOT_DEFS.map((_,i)=>`<div class="light ${i<filled?'on':''}"></div>`).join('');
+}
+
+function renderBoard(){
+  const board = document.getElementById('board');
+  board.innerHTML = SLOT_DEFS.map(def=>{
+    const filled = squad[def.key];
+    let cls = "slot" + (filled ? " filled" : " disabled");
+    let inner;
+    if(filled){
+      inner = `<div class="slot-label">${def.label}</div>
+                <div class="slot-value">${filled.name}</div>
+                <div class="slot-sub">${filled.team} '${String(filled.year).slice(2)} · ${filled.rating}</div>`;
+    } else {
+      inner = `<div class="slot-label">${def.label}</div><div class="slot-empty">＋</div>`;
+    }
+    return `<div class="${cls}">${inner}</div>`;
+  }).join('');
+  renderLights();
+}
+
+/* ---------------- RENDER: DRAFT PANEL ---------------- */
+function renderDraft(){
+  const panel = document.getElementById('draftPanel');
+  if(Object.keys(squad).length===SLOT_DEFS.length){
+    panel.innerHTML = `<h2>Squad complete</h2><p class="meta">Every slot is filled. Run the season below.</p>`;
+    return;
+  }
+
+  let html = `<h2>Spin for a team &amp; season</h2>`;
+
+  if(!currentSpin){
+    html += `<p class="meta">Every spin reveals the whole team — both drivers, both race engineers, the principal, and the car. Pick any one open role to draft it onto your squad.</p>
+      <button class="spin-btn" onclick="doSpin()">Spin the wheel</button>`;
+    panel.innerHTML = html;
+    return;
+  }
+
+  const spin = currentSpin;
+  html += `<div class="team-tag">${spin.team} &nbsp;·&nbsp; ${spin.year}</div>`;
+  html += `<div class="reveal">`;
+
+  // Reset the option registry for this render; cards reference options by index
+  // (not by inlining names into onclick strings) so names with quotes/apostrophes
+  // — e.g. "Ronan O'Driscoll" — can never break the HTML attribute.
+  window._pickOptions = [];
+
+  function registerOption(category, name, rating){
+    window._pickOptions.push({category, name, rating});
+    return window._pickOptions.length - 1;
+  }
+
+  function addCard(role, category, name, rating){
+    const full = categoryFull(category);
+    const already = personTaken(name);
+    const locked = full || already;
+    const idx = registerOption(category, name, rating);
+    const reason = already ? 'already on your squad' : (full ? 'both slots filled' : '');
+    html += cardHTML(role, name, rating, locked, idx, reason);
+  }
+
+  addCard("Driver", "driver", spin.drivers[0].name, spin.drivers[0].rating);
+  addCard("Driver", "driver", spin.drivers[1].name, spin.drivers[1].rating);
+  addCard(`Race Engineer (${spin.engineers[0].forDriver})`, "engineer", spin.engineers[0].name, spin.engineers[0].rating);
+  addCard(`Race Engineer (${spin.engineers[1].forDriver})`, "engineer", spin.engineers[1].name, spin.engineers[1].rating);
+  addCard("Team Principal", "principal", spin.principal.name, spin.principal.rating);
+  addCard("Car", "car", spin.car.name, spin.car.rating);
+
+  html += `</div>`;
+  html += `<div class="reroll-row">
+      <button onclick="doSpin()" ${rerollsLeft<=0?'disabled':''}>Reroll (${rerollsLeft} left)</button>
+      <span>Don't like this team &amp; era? Reroll to spin the whole team again.</span>
+    </div>`;
+  panel.innerHTML = html;
+}
+
+function cardHTML(role, name, rating, locked, idx, reason){
+  return `<div class="card ${locked?'locked':''}" ${locked?'':`onclick="pick(${idx})"`}>
+    <div class="role">${role}</div>
+    <div class="name">${name}</div>
+    <div class="rating">RTG ${rating}${locked?` · ${reason}`:''}</div>
+  </div>`;
+}
+
+// A category is "full" once every slot of that type is already drafted —
+// e.g. once both driver slots are filled, every driver card on future spins blurs out.
+function categoryFull(category){
+  if(category==="driver") return !!(squad.driver1 && squad.driver2);
+  if(category==="engineer") return !!(squad.engineer1 && squad.engineer2);
+  if(category==="principal") return !!squad.principal;
+  if(category==="car") return !!squad.car;
+  return false;
+}
+
+// Prevent drafting the exact same named person twice (e.g. Hülkenberg showing up
+// in two different team-season spins shouldn't let you draft him as both drivers).
+function personTaken(name){
+  return Object.values(squad).some(s=>s.name===name);
+}
+
+function doSpin(){
+  currentSpin = POOL[Math.floor(Math.random()*POOL.length)];
+  if(rerollsLeft>0 && document.getElementById('draftPanel').innerHTML.includes('team-tag')){
+    rerollsLeft--;
+  }
+  renderDraft();
+}
+
+function pick(idx){
+  const spin = currentSpin;
+  const choice = window._pickOptions[idx];
+  let slotKey;
+  if(choice.category==="driver") slotKey = squad.driver1 ? "driver2" : "driver1";
+  else if(choice.category==="engineer") slotKey = squad.engineer1 ? "engineer2" : "engineer1";
+  else if(choice.category==="principal") slotKey = "principal";
+  else slotKey = "car";
+
+  squad[slotKey] = {name:choice.name, rating:choice.rating, team:spin.team, year:spin.year};
+  currentSpin = null;
+  renderBoard();
+  renderDraft();
+  if(Object.keys(squad).length===SLOT_DEFS.length){
+    renderSimTrigger();
+  }
+}
+
+/* ---------------- SIMULATION ---------------- */
+function renderSimTrigger(){
+  const el = document.getElementById('simArea');
+  el.innerHTML = `<div class="sim-summary">
+    <div class="tier">Squad locked in</div>
+    <button class="action-btn" onclick="runSeason()" style="margin-top:14px;">Simulate the season</button>
+  </div>`;
+}
+
+function computeOverall(){
+  // Display-only blended rating (not what drives win probability — see winProbability()).
+  // Weight order mirrors real F1 impact: car > drivers > team principal > race engineers.
+  const w = {driver1:.20, driver2:.20, principal:.14, engineer1:.06, engineer2:.06, car:.34};
+  let total = 0;
+  for(const k in w) total += squad[k].rating * w[k];
+  return total;
+}
+
+// The car sets a hard ceiling on how often you can realistically win a race —
+// this mirrors real F1, where even a great driver in a midfield car (Alonso in the
+// 2023 AMR23, for instance) can rack up podiums but essentially never wins.
+// Only genuinely dominant cars (RB19, W11, MCL39-tier) have a real shot at sweeping a season.
+function carCeiling(carRating){
+  const z = (carRating - 93) / 1.5;
+  return 1 / (1 + Math.exp(-z));
+}
+
+// Crew quality can only push performance UP or DOWN within the car's ceiling — a great
+// crew in a great car gets close to the ceiling, a poor crew leaves performance on the
+// table, but no crew overcomes a bad car. Within the crew itself, weighting mirrors real
+// F1 impact: drivers matter most, the team principal's calls next, race engineers least
+// (still meaningful on strategy/tyre calls, but the smallest lever of the four roles).
+function crewFactor(){
+  const crew = squad.driver1.rating*0.35 + squad.driver2.rating*0.35
+             + squad.principal.rating*0.20
+             + squad.engineer1.rating*0.05 + squad.engineer2.rating*0.05;
+  let factor = 0.7 + (crew - 80) / 60;
+  return Math.max(0.55, Math.min(1.25, factor));
+}
+
+function winProbability(){
+  const ceiling = carCeiling(squad.car.rating);
+  const p = ceiling * crewFactor();
+  return Math.max(0.001, Math.min(0.97, p));
+}
+
+function tierFor(wins,total){
+  if(wins===total) return "Perfect Season";
+  if(wins>=total*0.9) return "Championship Form";
+  if(wins>=total*0.7) return "Title Contender";
+  if(wins>=total*0.4) return "Midfield Scrap";
+  return "Backmarker";
+}
+
+// Standard normal random via Box-Muller.
+function gaussianRandom(mean, std){
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random();
+  while(v === 0) v = Math.random();
+  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  return z * std + mean;
+}
+
+function shuffle(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// 24 independent coin-flips at a fixed per-race probability produces a LOT of natural
+// binomial swing — enough that even a ~94% per-race squad can occasionally land on
+// 20-4 purely by chance. Real dominant F1 seasons don't behave that way: a truly
+// stacked car/driver combo (RB19 2023: 21 wins from 22) drops at most a race or two
+// to a genuine fluke, not four. So instead of flipping 24 independent coins, we work
+// out the *expected* number of losses from the per-race probability, then draw the
+// actual loss count from a tightened-variance distribution around that expectation —
+// same average outcome, far less wild downside for elite squads. Which specific
+// races are lost is still randomised afterward.
+function runSeason(){
+  const overall = computeOverall();
+  const ceiling = carCeiling(squad.car.rating);
+  const factor = crewFactor();
+  const p = winProbability();
+  const n = CALENDAR.length;
+
+  const meanLosses = n * (1 - p);
+  const naturalStd = Math.sqrt(n * p * (1 - p));
+  const dampedStd = naturalStd * 0.55; // tighten the spread around the expectation
+
+  let losses = Math.round(gaussianRandom(meanLosses, dampedStd));
+  losses = Math.max(0, Math.min(n, losses));
+  const wins = n - losses;
+  const perfect = losses === 0;
+
+  const order = shuffle([...Array(n).keys()]);
+  const lossIndices = new Set(order.slice(0, losses));
+  const results = CALENDAR.map((race, i) => ({race, won: !lossIndices.has(i)}));
+
+  const el = document.getElementById('simArea');
+  el.innerHTML = `
+    <div class="sim-summary">
+      <div class="record ${perfect?'perfect':'imperfect'}">${wins}-${losses}</div>
+      <div class="tier">${tierFor(wins, n)}</div>
+      <div class="rating-line">Squad overall: ${overall.toFixed(1)} &nbsp;·&nbsp; car ceiling: ${(ceiling*100).toFixed(1)}% &nbsp;·&nbsp; crew factor: ${factor.toFixed(2)}x &nbsp;·&nbsp; per-race win probability: ${(p*100).toFixed(1)}%</div>
+      <div class="race-grid">
+        ${results.map(r=>`<div class="race ${r.won?'win':'loss'}"><div class="rname">${r.race}</div><div class="result">${r.won?'WIN':'LOSS'}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="reset-row"><button class="action-btn" onclick="resetGame()">Draft a new squad</button></div>
+  `;
+}
+
+function resetGame(){
+  squad = {};
+  activeSlot = null;
+  currentSpin = null;
+  rerollsLeft = 1;
+  document.getElementById('simArea').innerHTML = '';
+  renderBoard();
+  renderDraft();
+}
+
+/* ---------------- INIT ---------------- */
+renderBoard();
+renderDraft();
+</script>
+</body>
+</html>
